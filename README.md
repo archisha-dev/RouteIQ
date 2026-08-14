@@ -94,10 +94,3 @@ Threat-intel API cross-checks (Google Safe Browsing, VirusTotal), evidence
 integrity hashing (SHA-256) for chain-of-custody, expansion into a broader
 investigator's toolkit (OSINT case-management workspace).
 
-## Deadline
-
-Round 1 project due **August 21**.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
