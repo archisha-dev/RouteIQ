@@ -13,7 +13,7 @@ import sqlite3
 from datetime import datetime
 
 from classifier import predict_category      # Suyash
-from scoring import confidence_score, recoverability_score  # Aryan
+from scoring1 import confidence_score, recoverability_score  # Aryan
 from routing import route_department          # Tanmay
 
 
@@ -57,9 +57,10 @@ def submit_complaint():
         category
     )
 
-    recoverability = recoverability_score(
-        category,
-        datetime.now().isoformat()
+    recoverability_score_value, recoverability = recoverability_score(
+    category,
+    datetime.now().isoformat()
+)
     )
 
     department = route_department(category)
