@@ -31,9 +31,6 @@ def recoverability_score(category, timestamp):
     elapsed_hours = elapsed_time.total_seconds() / 3600
 
      category = category.lower()
-
-    if category != "financial fraud":
-        return 60, "Medium"
         
     if elapsed_hours < 1:
         return 95,"High"
