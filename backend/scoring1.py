@@ -30,16 +30,16 @@ def recoverability_score(category, timestamp):
     elapsed_time = current_time - incident_time
     elapsed_hours = elapsed_time.total_seconds() / 3600
 
-     category = category.lower()
-        
+    category = category.lower()
+
     if elapsed_hours < 1:
-        return 95,"High"
+        return 95, "High"
 
     elif elapsed_hours <= 24:
-        return 60,"Medium"
+        return 60, "Medium"
 
     else:
-        return 30,"Low"
+        return 30, "Low"
 
 
 if __name__ == "__main__":
