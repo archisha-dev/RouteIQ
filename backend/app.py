@@ -16,12 +16,14 @@ from classifier import predict_category      # Suyash
 from scoring import confidence_score, recoverability_score  # Aryan
 from routing import route_department          # Tanmay
 
+
 app = Flask(__name__)
+
 DB_NAME = "routeiq.db"
-
-
 def init_db():
+
     conn = sqlite3.connect(DB_NAME)
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS complaints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,31 +37,69 @@ def init_db():
             timestamp TEXT
         )
     """)
+
     conn.commit()
     conn.close()
 
 
 @app.route("/submit", methods=["POST"])
 def submit_complaint():
+
     data = request.get_json()
 
-    category = predict_category(data.get("description", ""))
-    confidence = confidence_score(data.get("description", ""), data.get("amount", 0), category)
-    recoverability = recoverability_score(category, datetime.now().isoformat())
+    category, ml_confidence = predict_category(
+        data.get("description", "")
+    )
+
+    confidence = confidence_score(
+        data.get("description", ""),
+        data.get("amount", 0),
+        category
+    )
+
+    recoverability = recoverability_score(
+        category,
+        datetime.now().isoformat()
+    )
+
     department = route_department(category)
     timestamp = datetime.now().isoformat()
-
     conn = sqlite3.connect(DB_NAME)
     conn.execute(
-        "INSERT INTO complaints (category, description, amount, txn_id, confidence_score, recoverability_score, department, timestamp) VALUES (?,?,?,?,?,?,?,?)",
-        (category, data.get("description"), data.get("amount"), data.get("txn_id"),
-         confidence, recoverability, department, timestamp)
+        """
+        INSERT INTO complaints
+        (
+            category,
+            description,
+            amount,
+            txn_id,
+            confidence_score,
+            recoverability_score,
+            department,
+            timestamp
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            category,
+            data.get("description"),
+            data.get("amount"),
+            data.get("txn_id"),
+            confidence,
+            recoverability,
+            department,
+            timestamp
+        )
     )
+
     conn.commit()
     conn.close()
 
+
+
     return jsonify({
         "category": category,
+        "ml_confidence": round(ml_confidence, 2),
         "confidence_score": confidence,
         "recoverability_score": recoverability,
         "department": department,
@@ -69,18 +109,32 @@ def submit_complaint():
 
 @app.route("/history", methods=["GET"])
 def get_history():
+
     conn = sqlite3.connect(DB_NAME)
+
     conn.row_factory = sqlite3.Row
-    rows = conn.execute("SELECT * FROM complaints ORDER BY id DESC").fetchall()
+
+    rows = conn.execute(
+        "SELECT * FROM complaints ORDER BY id DESC"
+    ).fetchall()
+
     conn.close()
-    return jsonify([dict(row) for row in rows])
+
+    return jsonify([
+        dict(row)
+        for row in rows
+    ])
 
 
 @app.route("/", methods=["GET"])
 def health_check():
-    return jsonify({"status": "RouteIQ backend running"})
 
+    return jsonify({
+        "status": "RouteIQ backend running"
+    })
 
 if __name__ == "__main__":
+
     init_db()
+
     app.run(debug=True, port=5000)
