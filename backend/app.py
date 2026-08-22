@@ -1,10 +1,15 @@
 """
 RouteIQ - Flask Backend
 ------------------------
-Run with:  python app.py
-Test with: curl -X POST http://127.0.0.1:5000/submit -H "Content-Type: application/json" -d "{\"description\":\"test\",\"amount\":5000,\"category\":\"Financial Fraud\",\"txn_id\":\"UPI123\"}"
+Run with: python app.py
 
-Owner: Archisha (integration). Each teammate owns one imported module below -
+Test with:
+curl -X POST http://127.0.0.1:5000/submit \
+-H "Content-Type: application/json" \
+-d "{\"description\":\"test\",\"amount\":5000,\"category\":\"Financial Fraud\",\"txn_id\":\"UPI123\"}"
+
+Owner: Archisha (integration).
+Each teammate owns one imported module below -
 see classifier.py, scoring.py, routing.py.
 """
 
@@ -13,13 +18,19 @@ import sqlite3
 from datetime import datetime
 
 from classifier import predict_category      # Suyash
-from scoring1 import confidence_score, recoverability_score  # Aryan
+from scoring import confidence_score, recoverability_score  # Aryan
 from routing import route_department          # Tanmay
 
 
 app = Flask(__name__)
 
 DB_NAME = "routeiq.db"
+
+
+# =========================================================
+# DATABASE INITIALIZATION
+# =========================================================
+
 def init_db():
 
     conn = sqlite3.connect(DB_NAME)
@@ -42,14 +53,27 @@ def init_db():
     conn.close()
 
 
+# =========================================================
+# SUBMIT COMPLAINT
+# =========================================================
+
 @app.route("/submit", methods=["POST"])
 def submit_complaint():
 
     data = request.get_json()
 
+    # -----------------------------------------------------
+    # 1. AI CLASSIFICATION - NAIVE BAYES
+    # -----------------------------------------------------
+
     category, ml_confidence = predict_category(
         data.get("description", "")
     )
+
+
+    # -----------------------------------------------------
+    # 2. CONFIDENCE SCORE
+    # -----------------------------------------------------
 
     confidence = confidence_score(
         data.get("description", ""),
@@ -57,15 +81,37 @@ def submit_complaint():
         category
     )
 
-    recoverability_score_value, recoverability = recoverability_score(
-    category,
-    datetime.now().isoformat()
-)
+
+    # -----------------------------------------------------
+    # 3. RECOVERABILITY SCORE
+    # -----------------------------------------------------
+
+    recoverability = recoverability_score(
+        category,
+        datetime.now().isoformat()
     )
 
+
+    # -----------------------------------------------------
+    # 4. DEPARTMENT ROUTING
+    # -----------------------------------------------------
+
     department = route_department(category)
+
+
+    # -----------------------------------------------------
+    # 5. TIMESTAMP
+    # -----------------------------------------------------
+
     timestamp = datetime.now().isoformat()
+
+
+    # -----------------------------------------------------
+    # 6. SAVE COMPLAINT TO DATABASE
+    # -----------------------------------------------------
+
     conn = sqlite3.connect(DB_NAME)
+
     conn.execute(
         """
         INSERT INTO complaints
@@ -97,6 +143,9 @@ def submit_complaint():
     conn.close()
 
 
+    # -----------------------------------------------------
+    # 7. RETURN RESPONSE
+    # -----------------------------------------------------
 
     return jsonify({
         "category": category,
@@ -107,6 +156,10 @@ def submit_complaint():
         "timestamp": timestamp
     })
 
+
+# =========================================================
+# COMPLAINT HISTORY
+# =========================================================
 
 @app.route("/history", methods=["GET"])
 def get_history():
@@ -127,6 +180,10 @@ def get_history():
     ])
 
 
+# =========================================================
+# HEALTH CHECK
+# =========================================================
+
 @app.route("/", methods=["GET"])
 def health_check():
 
@@ -134,8 +191,16 @@ def health_check():
         "status": "RouteIQ backend running"
     })
 
+
+# =========================================================
+# START SERVER
+# =========================================================
+
 if __name__ == "__main__":
 
     init_db()
 
-    app.run(debug=True, port=5000)
+    app.run(
+        debug=True,
+        port=5000
+    )
