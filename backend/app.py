@@ -72,10 +72,9 @@ def submit_complaint():
 
 
     # -----------------------------------------------------
-    # 2. CONFIDENCE SCORE
+    # 2. CONFIDENCE SCORE - ARYAN
     # -----------------------------------------------------
-
-    confidence = confidence_score(
+    confidence, matched_indicators = confidence_score(
         data.get("description", ""),
         data.get("amount", 0),
         category
@@ -83,10 +82,10 @@ def submit_complaint():
 
 
     # -----------------------------------------------------
-    # 3. RECOVERABILITY SCORE
+    # 3. RECOVERABILITY SCORE - ARYAN
     # -----------------------------------------------------
 
-    recoverability = recoverability_score(
+    recoverability, recovery_level = recoverability_score(
         category,
         datetime.now().isoformat()
     )
@@ -151,7 +150,9 @@ def submit_complaint():
         "category": category,
         "ml_confidence": round(ml_confidence, 2),
         "confidence_score": confidence,
+        "matched_indicators": matched_indicators,
         "recoverability_score": recoverability,
+        "recovery_level": recovery_level,
         "department": department,
         "timestamp": timestamp
     })
